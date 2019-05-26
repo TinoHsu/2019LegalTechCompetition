@@ -121,7 +121,7 @@ print(len(seg_corpus))
 # 一般word embbading
 from sklearn.feature_extraction.text import CountVectorizer
 
-vectorizer = CountVectorizer()
+vectorizer = CountVectorizer(max_features=5000)
 # X = vectorizer.fit_transform(seg_corpus)
 # # print(vectorizer.get_feature_names())
 # print(X.toarray())
@@ -173,5 +173,3 @@ for i in range(0,len(feature_names)):
     plt.text(embeddings[i,0], embeddings[i,1], feature_names[i])
 
 plt.show()
-
-
