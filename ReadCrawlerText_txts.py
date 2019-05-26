@@ -7,6 +7,8 @@ from os import listdir
 from os.path import isfile, isdir, join
 import os
 from gensim.models import word2vec
+from mittens import GloVe
+import matplotlib.pyplot as plt
 
 ## 撈出資料夾中檔案名稱-----------------------------------
 # 給予路徑
@@ -158,6 +160,18 @@ for i in range(0, 1500, 100):
     print('模型推論Topic:', lad_result[i]+1, '   案由:', key_reson, )
     # print(corpus)
 
+# count = CountVectorizer()
+# bag = count.fit_transform(seg_corpus)
 
+glove_model = GloVe(n=2, max_iter=1000)
+cooccurrence_matrix = np.dot(X.toarray().transpose(), X.toarray())
+embeddings = glove_model.fit(cooccurrence_matrix)
+print(embeddings.shape)
+
+plt.scatter(embeddings[:,0], embeddings[:,1], marker="o")
+for i in range(0,len(feature_names)):
+    plt.text(embeddings[i,0], embeddings[i,1], feature_names[i])
+
+plt.show()
 
 
