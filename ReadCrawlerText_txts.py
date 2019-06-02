@@ -10,6 +10,7 @@ from gensim.models import word2vec
 from mittens import GloVe
 import matplotlib.pyplot as plt
 
+
 ## 撈出資料夾中檔案名稱-----------------------------------
 # 給予路徑
 now_path = os.getcwd()
