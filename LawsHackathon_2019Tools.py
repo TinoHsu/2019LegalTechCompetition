@@ -190,22 +190,24 @@ def topicModelLDA(bow, word_table, topic_k, n_top_words):
 
 def checkJudgement(model_result, corpus):
 
-    topic = input("隨機印出Topic?")
+    topic = input("隨機印出Topic? ")
     topic = int(topic)
     assert type(topic)==int
 
-    number_paper = input("?篇判決書")
+    number_paper = input("?篇判決書 ")
+
     number_paper = int(number_paper)
     assert type(number_paper)==int
 
     find = topic
     paper_list = [i for i,v in enumerate(model_result) if v==find]
-    print(paper_list)
+    # print(paper_list)
 
     if (len(paper_list) == 0):
         print('沒有結果')
 
     elif (len(paper_list) == 1):
+        
         paper_index = random.sample(paper_list, 1)
         print(paper_index)
         print('Topic', topic)
