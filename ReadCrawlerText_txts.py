@@ -96,12 +96,13 @@ for i in range(len(corpus)):
 
     seg_lsit = []
     for word in remainderWords:
-        # print(word)
+        print(word)
         seg_lsit.append(word)
-    # print("seg_list", seg_lsit)
+    print("seg_list", seg_lsit)
     seg = ' '
     a = seg.join(seg_lsit)
-    # print('a', a)
+    print('a', a)
+    print(type(a))
     seg_corpus.append(a)
 
 print(len(seg_corpus))
