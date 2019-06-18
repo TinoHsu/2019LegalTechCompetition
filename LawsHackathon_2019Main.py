@@ -5,16 +5,17 @@ from LawsHackathon_2019Tools import *
 case = "侵權行為損害賠償"
 
 ## 核心詞與法條加權的係數
-coreWeighting = 50
+coreWeighting = 1
 
 ## 主題歸類完後顯示前幾?筆詞彙
-show_top_words = 20
+show_top_words = 50
 
 
 ## 開啟TF-IDF與否
 # tfidf = True
 tfidf = False
-## 基礎設定區-----------------------
+## 基礎設定區
+# -----------------------
 
 
 ## 獲取工作路徑
@@ -38,12 +39,14 @@ raw_text = readJson_chouCrawler(data_path, reason=case)
 # corpus = nameRecognition()
 
 
+bow1 = textRepresatation(work_path, raw_text)
 ## 分割文本中的字串
-seg_corpus = segmentation(work_path, raw_text)
-
-
+seg_corpus = bow1.segmentation('my.dict.txt', 'stopWords.txt')
 ## 文本轉化成文件矩陣
-docVector, words_list = wordsTokenization(work_path, seg_corpus, core_factor=coreWeighting, tfidf_func = tfidf)
+docVector, words_list = bow1.wordsTokenization(seg_corpus, core_factor=coreWeighting, tfidf_func = tfidf)
+
+# seg_corpus = segmentation(work_path, raw_text)
+# docVector, words_list = wordsTokenization(work_path, seg_corpus, core_factor=coreWeighting, tfidf_func = tfidf)
 
 
 ## 依照文件矩陣中詞頻進行主題分類
@@ -53,4 +56,4 @@ model_result = topicModelLDA(docVector, words_list, topic_k=5, n_top_words=show_
 # 隨機印出?篇?Topic檢查內容
 os.system('pause')
 while(1):
-    checkJudgement(model_result, raw_text)
+    checkJudgement(model_result, bow1.jieba_result)
