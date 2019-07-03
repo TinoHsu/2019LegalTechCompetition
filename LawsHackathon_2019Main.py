@@ -27,7 +27,7 @@ data_path = work_path + "/judgement_json/"
 
 
 ## 開始讀檔並整理為字串存成文本raw_text
-raw_text = readJson_chouCrawler(data_path, reason=case)
+raw_text = readJsonChouChouCrawler(data_path, reason=case)
 
 # 隨機印出一篇檢查內容
 # rd = random.randint(0,len(raw_text))
@@ -39,7 +39,7 @@ raw_text = readJson_chouCrawler(data_path, reason=case)
 # corpus = nameRecognition()
 
 
-bow1 = textRepresatation(work_path, raw_text)
+bow1 = TextRepresatation(work_path, raw_text)
 ## 分割文本中的字串
 seg_corpus = bow1.segmentation('my.dict.txt', 'stopWords.txt')
 ## 文本轉化成文件矩陣

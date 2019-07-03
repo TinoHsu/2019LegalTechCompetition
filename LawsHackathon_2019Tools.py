@@ -17,7 +17,7 @@ from sklearn.feature_extraction.text import TfidfTransformer
 
 
 
-def readJson_chouCrawler(path,reason):
+def readJsonChouChouCrawler(path,reason):
     # for read json (before 7/1 use)
     print('案由:', reason)
     lines = ""
@@ -54,7 +54,7 @@ def readJson_chouCrawler(path,reason):
 
 # def nameRecognition():
 
-class textRepresatation:
+class TextRepresatation:
 
     def __init__(self, path, corpus):
         self.path = path
