@@ -49,8 +49,47 @@ def readJsonChouChouCrawler(path,reason):
         return data_list
 
 
-# def readJson(path,reason):
+def readJson(txtpath, josnpath, reason):
     # for read json (after 7/1 use ,Fit lowsnote format)
+    print('案由:', reason)
+    
+    # 打開「特定案由檔名清單」
+    json_name_list = open(txtpath + "/" + reason + ".txt", 'r')
+    # print(type(json_name_list))
+
+    # 存放判決書轉成str的 list
+    data_list = []
+
+    # 從「特定案由檔名清單」裡依序撈出「json檔名」
+    for json_name in json_name_list:
+        # 去掉換行符號'\n'
+        json_name = json_name.strip('\n')
+        # print(json_name)
+
+        # 讀取json內容
+        lines = ""
+        with open(josnpath + "/" + json_name, "r", encoding='utf8') as json_file:
+            # 一行一行讀取json的字串 並串成完整的jsonStr
+            for row in json_file.readlines():
+                # print(row)
+                lines+=row
+            # 把json轉成dict
+            lines = json.loads(lines)
+            
+            # print(lines['judgement'])
+            # print(type(lines['judgement']))
+            
+            #把dict中的judgement部份取出
+            judgement_str = lines['judgement']
+            # print(judgement_str)
+            
+            # 消除\n \r \u3000
+            out = "".join(judgement_str.split())
+            # 塞進存判決書的list
+            data_list.append(out)
+
+    return data_list
+
 
 # def nameRecognition():
 
@@ -80,6 +119,7 @@ class TextRepresatation:
         # print('停用詞', stopWords)
 
         # 準備裝斷詞的結果
+        judgement_length = []
         seg_corpus = []
         tic = time.time()
         # 對每個判決書斷詞並移除停用詞
@@ -93,12 +133,15 @@ class TextRepresatation:
             # print("Default Mode: " + "/ ".join(words)) 
 
             # 留下jieba斷詞的副本以供查詢
-            combine_words = ("/ ".join(words_copy))
+            combine_words = ("/".join(words_copy))
             self.jieba_result.append(combine_words)
             
             # remainderWords=[]
             # 移除停用詞及跳行符號
             remainderWords = list(filter(lambda a: a not in stopWords and a != '\n', words))
+            # print('判決書字數', len(remainderWords))   
+            judgement_length.append(len(remainderWords))
+
             # 合併判決書的所有分詞為一個str
             seg_symbol = ' '
             seg_str = seg_symbol.join(remainderWords)
@@ -113,7 +156,7 @@ class TextRepresatation:
         print('斷詞結束, 檢查文本篇數', len(seg_corpus))
         print('斷詞花費時間: ' + str((toc - tic)) + 'sec')
         
-        return seg_corpus
+        return seg_corpus, judgement_length
     
 
     def wordsTokenization(self, seg_corpus, core_factor, tfidf_func):
@@ -201,7 +244,7 @@ def topicModelLDA(bow, word_table, topic_k, n_top_words):
 
     return lad_result
 
-def checkJudgement(model_result, corpus):
+def checkJudgement(model_result, corpus, judgement_length):
 
     try:
         topic = input("隨機印出Topic? ")
@@ -229,7 +272,7 @@ def checkJudgement(model_result, corpus):
         paper_index = random.sample(paper_list, 1)
         print(paper_index)
         print('\n')
-        print('Topic', topic, '第',paper_index,'篇')
+        print('Topic', topic, '第', paper_index, '篇', '判決書字數', judgement_length[paper_index[0]])
         print(corpus[paper_index[0]])
 
     else:
@@ -237,12 +280,13 @@ def checkJudgement(model_result, corpus):
         print(paper_index)
         for t in range(len(paper_index)):
             print('\n')
-            print('Topic', topic, '第', paper_index[t], '篇')
+            print('Topic', topic, '第', paper_index[t], '篇', '判決書字數', judgement_length[paper_index[t]])
             print(corpus[paper_index[t]])
 
     os.system('pause')
         
-
+def checkJudgement_all(model_result, corpus):
+    print('NotYet!')
     
 
 
