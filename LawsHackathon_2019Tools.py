@@ -14,6 +14,7 @@ from pandas.io.json import json_normalize
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
+import re
 
 
 
@@ -25,7 +26,7 @@ def readJsonChouChouCrawler(path,reason):
     with open(path + "/" + reason + "judgements.json","r", encoding='utf8') as json_file:
         # 一行一行讀取json的字串 並串成完整的jsonStr
         for row in json_file.readlines(): 
-            lines+=row
+            lines+=re.sub(r'\d+','',row)
         # jsonStr轉成dict
         lines = json.loads(lines)
         # dict轉成dataframe 
@@ -72,10 +73,10 @@ def readJson(txtpath, josnpath, reason):
             # 一行一行讀取json的字串 並串成完整的jsonStr
             for row in json_file.readlines():
                 # print(row)
-                lines+=row
+                lines+=re.sub(r'\d+','',row)
             # 把json轉成dict
             lines = json.loads(lines)
-            
+
             # print(lines['judgement'])
             # print(type(lines['judgement']))
             
@@ -89,6 +90,48 @@ def readJson(txtpath, josnpath, reason):
             data_list.append(out)
 
     return data_list
+
+# 此 readJson() 含去數字及去人名功能
+def readJson():
+    # 讀取json內容
+    lines = ""
+    with open('./民事判決_101,北簡,11731_2013-01-31.json', "r", encoding='utf8') as json_file:
+        # 一行一行讀取json的字串 並串成完整的jsonStr
+        for row in json_file.readlines():
+            # 去數字
+            lines+=re.sub(r'\d+','',row)
+    # 把json轉成dict
+    lines = json.loads(lines)
+    judgement_str = lines['judgement']
+    # 消除\n \r \u3000
+    out = "".join(judgement_str.split())
+    print("去人名前:\n" + out)
+
+    # 取出所有人名
+    data = json_normalize(lines, 'party')
+    numpy_matrix = data.iloc[:, 2].values
+
+    # 將人名list的內容合併成str
+    removedStr = "".join(numpy_matrix)
+    # 做成人名分詞
+    removedWordsGenerator = jieba.cut(removedStr, cut_all=False)
+    removedWords = []
+    while True:
+        try:
+            # 將人名分詞結果存為list
+            removedWords.append(next(removedWordsGenerator))
+        except StopIteration: 
+            # iter跑完做以下事情
+            print("人名分詞列表: ",removedWords, '\n')
+
+            # 將原文分詞，並過濾掉人名分詞
+            words = jieba.cut(out, cut_all=False)
+            remainderWords = list(filter(lambda a: a not in removedWords and a != '\n', words))
+            
+            # 將無人名的分詞結果合併成無人名的原文
+            out_normaled = ("".join(remainderWords))
+            break
+    print("去人名後:\n" + out_normaled)
 
 
 # def nameRecognition():
