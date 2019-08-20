@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import math
 import time
@@ -14,7 +15,6 @@ from pandas.io.json import json_normalize
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
-import re
 
 
 
@@ -26,7 +26,7 @@ def readJsonChouChouCrawler(path,reason):
     with open(path + "/" + reason + "judgements.json","r", encoding='utf8') as json_file:
         # 一行一行讀取json的字串 並串成完整的jsonStr
         for row in json_file.readlines(): 
-            lines+=re.sub(r'\d+','',row)
+            lines+=row
         # jsonStr轉成dict
         lines = json.loads(lines)
         # dict轉成dataframe 
@@ -61,6 +61,12 @@ def readJson(txtpath, josnpath, reason):
     # 存放判決書轉成str的 list
     data_list = []
 
+    # 儲存\uXXXX讀取錯誤清單
+    # escape_error_list = []
+    
+    # 儲存文末標記區域清單
+    # tail_list = []
+
     # 從「特定案由檔名清單」裡依序撈出「json檔名」
     for json_name in json_name_list:
         # 去掉換行符號'\n'
@@ -68,70 +74,130 @@ def readJson(txtpath, josnpath, reason):
         # print(json_name)
 
         # 讀取json內容
-        lines = ""
-        with open(josnpath + "/" + json_name, "r", encoding='utf8') as json_file:
-            # 一行一行讀取json的字串 並串成完整的jsonStr
-            for row in json_file.readlines():
-                # print(row)
-                lines+=re.sub(r'\d+','',row)
-            # 把json轉成dict
-            lines = json.loads(lines)
 
-            # print(lines['judgement'])
-            # print(type(lines['judgement']))
-            
-            #把dict中的judgement部份取出
-            judgement_str = lines['judgement']
-            # print(judgement_str)
-            
-            # 消除\n \r \u3000
-            out = "".join(judgement_str.split())
-            # 塞進存判決書的list
-            data_list.append(out)
+        # lines = ""
+        # with open(josnpath + "/" + json_name, "r", encoding='utf8') as json_file:
+        #     print(json_name)
+        #     # 一行一行讀取json的字串 並串成完整的jsonStr
+        #     for row in json_file.readlines():
+        #         # print(row)
+        #         #消除數字
+        #         lines+=re.sub(r'\d+','',row)
+        #         # lines+=row
+        #     # 把json轉成dict
+        #     try:
+        #         lines = json.loads(lines)
+        #     except:
+        #         escape_error_list.append(json_name)
 
+        #     judgement_str = lines['judgement']
+
+        json_file = open(josnpath + "/" + json_name, "r", encoding='UTF-8-sig')
+        json_dict = json.load(json_file)
+        # try:
+        #     json_dict = json.load(json_file)
+        # except:
+        #     escape_error_list.append(json_name)
+        
+        #把dict中的judgement部份取出
+        judgement_str = json_dict['judgement']
+        # print(judgement_str)
+                
+        ## 消除數字
+        digi_out = re.sub(r'\d+','',judgement_str)
+        ## 消除\n \r \u3000
+        trash_out = "".join(digi_out.split())
+        #print(trash_out)
+        #print('\n')
+        
+        ##消除 上訴人 被上訴人 訴訟代理人
+        # print(type(lines['party']))
+        # print(len(lines['party']))
+        # print(lines['party']) 
+        special_symbol = '?'  
+        for i in range(len(json_dict['party'])):
+            #print(lines['party'][i]['value'])
+            # 取出人名
+            person_name = json_dict['party'][i]['value']
+            # 消除特殊字元
+            intersection = (person_name and special_symbol)
+            if intersection == '?':
+                person_name = re.sub(u"([^\u4e00-\u9fa5\u0030-\u0039\u0041-\u005a\u0061-\u007a])", "", person_name)
+            # print(person_name)
+            # 消除人名
+            trash_out = re.sub(person_name, '', trash_out)
+        # print(trash_out)
+        # print('\n')
+        
+        ##消除 書記官 法官
+        mark_point_str_list = ["訟費用負擔", "判決如主文", "本院判決如下", "判決如下"]
+        for mark_point_str in mark_point_str_list:
+            mark_point = trash_out.find(mark_point_str)
+            # print(mark_point)
+            if mark_point != -1:
+                # print(mark_point_str)
+                break
+        
+        '''
+        # 判決書末尾抓不到上列關鍵片段，儲存檔名待查
+        if mark_point == -1:
+            tail_list.append(json_name)
+        '''
+
+        detect_area = trash_out[mark_point:]
+        # print(detect_area)
+        # print('\n')
+        # print(trash_out)
+        judge = "法官"
+        clerk = "書記官"
+
+        #書記官
+        clerk_mark_point = detect_area.find(clerk)
+        #姓名長度三 #若姓名長度二會圈到後面的字 就一起砍了
+        clerk_name = detect_area[clerk_mark_point:clerk_mark_point+6]
+        # print(clerk_name)
+        detect_area = re.sub(clerk_name, '', detect_area)
+        # print(detect_area)
+        # print('\n')
+        # print(trash_out)
+        trash_out = re.sub(clerk_name, '', trash_out)
+        
+        # 法官
+        while(1):
+            judge_mark_point = detect_area.find(judge)
+            #姓名長度三
+            judge_name = detect_area[judge_mark_point:judge_mark_point+5]
+            # print(judge_name)
+            if judge_name == '':
+                # print('byebye!')
+                break
+            #姓名長度二
+            if judge_name[-1]=='法':
+                judge_name = detect_area[judge_mark_point:judge_mark_point+4]
+                # print(judge_name)
+            detect_area = re.sub(judge_name, '', detect_area)
+            trash_out = re.sub(judge_name, '', trash_out)
+            # print(detect_area)
+            # print('\n')
+            # print(trash_out)
+        # print(trash_out)
+
+        # 塞進存判決書的list
+        data_list.append(trash_out)
+        # print('OK')
+    '''
+    # 錯誤紀錄轉存
+    escape_error = np.asarray(escape_error_list).T
+    df_escape_error = pd.DataFrame(escape_error)
+    df_escape_error.to_excel("escape_error_list.xlsx", index=False)
+
+    tail = np.asarray(tail_list).T
+    df_tail = pd.DataFrame(tail)
+    df_tail.to_excel("tail_list.xlsx", index=False)
+
+    print('Save right!')
+    '''
     return data_list
-
-# 此 readJson() 含去數字及去人名功能
-def readJson():
-    # 讀取json內容
-    lines = ""
-    with open('./民事判決_101,北簡,11731_2013-01-31.json', "r", encoding='utf8') as json_file:
-        # 一行一行讀取json的字串 並串成完整的jsonStr
-        for row in json_file.readlines():
-            # 去數字
-            lines+=re.sub(r'\d+','',row)
-    # 把json轉成dict
-    lines = json.loads(lines)
-    judgement_str = lines['judgement']
-    # 消除\n \r \u3000
-    out = "".join(judgement_str.split())
-    print("去人名前:\n" + out)
-
-    # 取出所有人名
-    data = json_normalize(lines, 'party')
-    numpy_matrix = data.iloc[:, 2].values
-
-    # 將人名list的內容合併成str
-    removedStr = "".join(numpy_matrix)
-    # 做成人名分詞
-    removedWordsGenerator = jieba.cut(removedStr, cut_all=False)
-    removedWords = []
-    while True:
-        try:
-            # 將人名分詞結果存為list
-            removedWords.append(next(removedWordsGenerator))
-        except StopIteration: 
-            # iter跑完做以下事情
-            print("人名分詞列表: ",removedWords, '\n')
-
-            # 將原文分詞，並過濾掉人名分詞
-            words = jieba.cut(out, cut_all=False)
-            remainderWords = list(filter(lambda a: a not in removedWords and a != '\n', words))
-            
-            # 將無人名的分詞結果合併成無人名的原文
-            out_normaled = ("".join(remainderWords))
-            break
-    print("去人名後:\n" + out_normaled)
 
 
 # def nameRecognition():
@@ -229,7 +295,7 @@ class TextRepresatation:
             print('word_list shape', len(word_list))
         
         # print(vectorizer.vocabulary_)
-
+        '''
         ## 核心詞的加權處理--------------------------
         # 存核心詞
         coreWords=[]
@@ -256,7 +322,7 @@ class TextRepresatation:
         
         # bow_array 一般矩陣轉回稀疏矩陣
         bow = sparse.csr_matrix(bow_array)
-
+        '''
         # 觀察高出現率的詞是什麼？
         # for i in range(bow.shape[0]):
         #     for j in range(bow.shape[1]):
