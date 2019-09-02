@@ -12,6 +12,8 @@ from scipy import sparse
 import matplotlib.pyplot as plt
 from os.path import isfile, isdir, join
 from pandas.io.json import json_normalize
+from sklearn.cluster import KMeans
+from sklearn.decomposition import NMF
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
@@ -335,7 +337,52 @@ class TextRepresatation:
         return bow, word_list
 
 
-def topicModelLDA(bow, word_table, topic_k, n_top_words):
+def topicModelCluster(bow, word_table, topic_k, n_top_words, model_type, hierarchy):
+    if model_type == 'LDA':
+        # LDA主題模型歸類
+        lda = LatentDirichletAllocation(n_components=topic_k, max_iter=5,
+                                learning_method='online',
+                                learning_offset=50.,
+                                random_state=0)
+        cluster_result = lda.fit_transform(bow) 
+        # 歸類結果對應轉換
+        # print(lda.components_.shape)
+        cluster_result = np.argmax(cluster_result, axis=1)
+        print('歸類結果') 
+        print(cluster_result)
+
+        feature_names = word_table
+        for topic_idx, topic in enumerate(lda.components_):
+            print('\n')
+            if hierarchy == -1:
+                print("Topic %d:" % (topic_idx),'篇數', cluster_result.tolist().count(topic_idx))
+                print(" ".join([feature_names[i] for i in topic.argsort() [:-n_top_words - 1:-1]]))        
+            if hierarchy != -1:
+                print("Topic %d.%d:" % (hierarchy, topic_idx),'篇數', cluster_result.tolist().count(topic_idx))
+                print(" ".join([feature_names[i] for i in topic.argsort() [:-n_top_words - 1:-1]]))
+    
+    if model_type == 'NMF':
+        # NMF主題模型歸類
+        nmf = NMF(n_components=topic_k, random_state=1,
+          beta_loss='kullback-leibler', solver='mu', max_iter=1000, alpha=.1,
+          l1_ratio=.5)
+        cluster_result = nmf.fit_transform(bow) 
+        # 歸類結果對應轉換
+        cluster_result = np.argmax(cluster_result, axis=1)
+        print('歸類結果') 
+        print(cluster_result)
+
+        feature_names = word_table
+        for topic_idx, topic in enumerate(nmf.components_):
+            print('\n')
+            if hierarchy == -1:
+                print("Topic %d:" % (topic_idx),'篇數', cluster_result.tolist().count(topic_idx))
+                print(" ".join([feature_names[i] for i in topic.argsort() [:-n_top_words - 1:-1]]))        
+            if hierarchy != -1:
+                print("Topic %d.%d:" % (hierarchy, topic_idx),'篇數', cluster_result.tolist().count(topic_idx))
+                print(" ".join([feature_names[i] for i in topic.argsort() [:-n_top_words - 1:-1]]))
+    
+    '''
     # LDA主題模型歸類
     lda = LatentDirichletAllocation(n_components=topic_k, random_state=0)
     lad_result = lda.fit_transform(bow) 
@@ -352,6 +399,8 @@ def topicModelLDA(bow, word_table, topic_k, n_top_words):
         print(" ".join([feature_names[i] for i in topic.argsort() [:-n_top_words - 1:-1]]))
 
     return lad_result
+    '''
+    return cluster_result
 
 def checkJudgement(model_result, corpus, judgement_length):
 
