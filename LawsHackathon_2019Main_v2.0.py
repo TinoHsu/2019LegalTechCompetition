@@ -2,8 +2,8 @@ from LawsHackathon_2019Tools import *
 
 ## 基礎設定區-----------------------
 ## 設定案由
-# case = "侵權行為損害賠償"
-case = "給付租金"
+case = "侵權行為損害賠償"
+# case = "給付租金"
 
 ## 核心詞與法條加權的係數
 coreWeighting = 1
